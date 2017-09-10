@@ -33,6 +33,10 @@ CREATE TABLE `snmpinterfacespeed` (
   `lastifoutdiscards` bigint(64) DEFAULT NULL,
   `lastifouterrors` bigint(64) DEFAULT NULL,
   `lasttimestamp` datetime DEFAULT NULL,
+  `lastifinmulticastpkts` bigint(64) DEFAULT NULL,
+  `lastifinbroadcastpkts` bigint(64) DEFAULT NULL,
+  `lastifoutmulticastpkts` bigint(64) DEFAULT NULL,
+  `lastifoutbroadcastpkts` bigint(64) DEFAULT NULL,
   `ifinoctetsps` bigint(64) DEFAULT NULL,
   `ifinucastpps` bigint(64) DEFAULT NULL,
   `ifinnucastpps` bigint(64) DEFAULT NULL,
@@ -44,8 +48,12 @@ CREATE TABLE `snmpinterfacespeed` (
   `ifoutnucastpps` bigint(64) DEFAULT NULL,
   `ifoutdiscardpps` bigint(64) DEFAULT NULL,
   `ifouterrorpps` bigint(64) DEFAULT NULL,
+  `ifinmulticastpps` bigint(64) DEFAULT NULL,
+  `ifinbroadcastpps` bigint(64) DEFAULT NULL,
+  `ifoutmulticastpps` bigint(64) DEFAULT NULL,
+  `ifoutbroadcastpps` bigint(64) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `snmpinterfacespeed_ibfk_1` FOREIGN KEY (`id`) REFERENCES `snmpinterfaceinfo` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `snmpinterfacespeed_ibfk_1` FOREIGN KEY (`id`) REFERENCES `t_snmpallifinfo` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DELIMITER $$
@@ -53,24 +61,24 @@ DROP PROCEDURE IF EXISTS speed_update;
 CREATE PROCEDURE speed_update()
 BEGIN
     DECLARE oid INT unsigned DEFAULT 0;
-    DECLARE newifinoctets, newifinucastpkts, newifinnucastpkts, newifindiscardpkts, newifinerrorpkts, newifinunknownprotospkts, newifoutoctets, newifoutucastpkts, newifoutnucastpkts, newifoutdiscardpkts, newifouterrorpkts BIGINT DEFAULT 0;
-    DECLARE oldifinoctets, oldifinucastpkts, oldifinnucastpkts, oldifindiscardpkts, oldifinerrorpkts, oldifinunknownprotospkts, oldifoutoctets, oldifoutucastpkts, oldifoutnucastpkts, oldifoutdiscardpkts, oldifouterrorpkts BIGINT DEFAULT 0;
+    DECLARE newifinoctets, newifinucastpkts, newifinnucastpkts, newifindiscardpkts, newifinerrorpkts, newifinunknownprotospkts, newifoutoctets, newifoutucastpkts, newifoutnucastpkts, newifoutdiscardpkts, newifouterrorpkts, newifinmulticastpkts, newifinbroadcastpkts, newifoutmulticastpkts, newifoutbroadcastpkts BIGINT DEFAULT 0;
+    DECLARE oldifinoctets, oldifinucastpkts, oldifinnucastpkts, oldifindiscardpkts, oldifinerrorpkts, oldifinunknownprotospkts, oldifoutoctets, oldifoutucastpkts, oldifoutnucastpkts, oldifoutdiscardpkts, oldifouterrorpkts, oldifinmulticastpkts, oldifinbroadcastpkts, oldifoutmulticastpkts, oldifoutbroadcastpkts BIGINT DEFAULT 0;
 	DECLARE time_stamp datetime DEFAULT NULL;
 	
     DECLARE done TINYINT DEFAULT 0;
     DECLARE cur1 CURSOR FOR
-        SELECT id, ifinoctets, ifinucastpkts, ifinnucastPkts, ifindiscards, ifinerrors, ifinunknownprotos, ifoutoctets, ifoutucastpkts, ifoutnucastPkts, ifoutdiscards, ifouterrors, timestamp FROM snmpinterfaceinfo;
+        SELECT id, ifhcinoctets, ifhcinucastpkts, ifinnucastPkts, ifindiscards, ifinerrors, ifinunknownprotos, ifhcoutoctets, ifhcoutucastpkts, ifoutnucastPkts, ifoutdiscards, ifouterrors, timestamp, ifhcinmulticastpkts, ifhcinbroadcastpkts, ifhcoutmulticastpkts, ifhcoutbroadcastpkts FROM t_snmpallifinfo;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
     OPEN cur1;
 	read_loop: LOOP
-	    FETCH cur1 INTO oid, newifinoctets, newifinucastpkts, newifinnucastpkts, newifindiscardpkts, newifinerrorpkts, newifinunknownprotospkts, newifoutoctets, newifoutucastpkts, newifoutnucastpkts, newifoutdiscardpkts, newifouterrorpkts, time_stamp;
+	    FETCH cur1 INTO oid, newifinoctets, newifinucastpkts, newifinnucastpkts, newifindiscardpkts, newifinerrorpkts, newifinunknownprotospkts, newifoutoctets, newifoutucastpkts, newifoutnucastpkts, newifoutdiscardpkts, newifouterrorpkts, time_stamp, newifinmulticastpkts, newifinbroadcastpkts, newifoutmulticastpkts, newifoutbroadcastpkts;
 		IF done THEN 
 		    LEAVE read_loop;
 		END IF;
 		
-        SELECT lastifinoctets, lastifinucastpkts, lastifinnucastPkts, lastifindiscards, lastifinerrors, lastifinunknownprotos, lastifoutoctets, lastifoutucastpkts, lastifoutnucastPkts, lastifoutdiscards, lastifouterrors
-            INTO oldifinoctets, oldifinucastpkts, oldifinnucastpkts, oldifindiscardpkts, oldifinerrorpkts, oldifinunknownprotospkts, oldifoutoctets, oldifoutucastpkts, oldifoutnucastpkts, oldifoutdiscardpkts, oldifouterrorpkts 
+        SELECT lastifinoctets, lastifinucastpkts, lastifinnucastPkts, lastifindiscards, lastifinerrors, lastifinunknownprotos, lastifoutoctets, lastifoutucastpkts, lastifoutnucastPkts, lastifoutdiscards, lastifouterrors, lastifinmulticastpkts, lastifinbroadcastpkts, lastifoutmulticastpkts, lastifoutbroadcastpkts 
+            INTO oldifinoctets, oldifinucastpkts, oldifinnucastpkts, oldifindiscardpkts, oldifinerrorpkts, oldifinunknownprotospkts, oldifoutoctets, oldifoutucastpkts, oldifoutnucastpkts, oldifoutdiscardpkts, oldifouterrorpkts, oldifinmulticastpkts, oldifinbroadcastpkts, oldifoutmulticastpkts, oldifoutbroadcastpkts 
 			FROM snmpinterfacespeed WHERE id = oid;
 			
 	    REPLACE snmpinterfacespeed 
@@ -86,6 +94,10 @@ BEGIN
 				ifoutnucastpps = newifoutnucastpkts - oldifoutnucastpkts,
 				ifoutdiscardpps = newifoutdiscardpkts - oldifoutdiscardpkts,
 				ifouterrorpps = newifouterrorpkts - oldifouterrorpkts,
+				ifinmulticastpps = newifinmulticastpkts - oldifinmulticastpkts,
+                ifinbroadcastpps = newifinbroadcastpkts - oldifinbroadcastpkts,
+                ifoutmulticastpps = newifoutmulticastpkts - oldifoutmulticastpkts,
+                ifoutbroadcastpps = newifoutbroadcastpkts - oldifoutbroadcastpkts,
 				lastifinoctets = newifinoctets,
 			    lastifinucastpkts = newifinucastpkts,
 				lastifinnucastPkts = newifinnucastpkts,
@@ -97,7 +109,11 @@ BEGIN
 				lastifoutnucastPkts = newifoutnucastpkts,
 				lastifoutdiscards = newifoutdiscardpkts,
 				lastifouterrors = newifouterrorpkts,
-				lasttimestamp = time_stamp;
+				lasttimestamp = time_stamp,
+				lastifinmulticastpkts = newifinmulticastpkts,
+				lastifinbroadcastpkts = newifinbroadcastpkts,
+				lastifoutmulticastpkts = newifoutmulticastpkts,
+				lastifoutbroadcastpkts = newifoutbroadcastpkts;
 			
 	END LOOP;
 	CLOSE cur1;
@@ -113,23 +129,23 @@ DROP EVENT IF EXISTS add_count_test;
 CREATE EVENT add_count_test ON SCHEDULE EVERY 1 SECOND
 DO
 	BEGIN
-		UPDATE snmpinterfaceinfo 
-			SET ifinoctets = ifinoctets + 10,
-				ifinucastpkts = ifinucastpkts + 10
+		UPDATE t_snmpallifinfo 
+			SET ifhcinoctets = ifhcinoctets + 10,
+				ifhcinucastpkts = ifhcinucastpkts + 10
 			WHERE id = 1;
-		UPDATE snmpinterfaceinfo 
-			SET ifinoctets = ifinoctets + 20,
-				ifinucastpkts = ifinucastpkts + 20
+		UPDATE t_snmpallifinfo 
+			SET ifhcinoctets = ifhcinoctets + 20,
+				ifhcinucastpkts = ifhcinucastpkts + 20
 			WHERE id = 2;
-		UPDATE snmpinterfaceinfo 
-			SET ifinoctets = ifinoctets + 30,
-				ifinucastpkts = ifinucastpkts + 30
+		UPDATE t_snmpallifinfo 
+			SET ifhcinoctets = ifhcinoctets + 30,
+				ifhcinucastpkts = ifhcinucastpkts + 30
 			WHERE id = 3;
 	END $$
 DELIMITER ;
 
 			
 DROP EVENT IF EXISTS update_speed;
-CREATE EVENT update_speed ON SCHEDULE EVERY 5 SECOND
+CREATE EVENT update_speed ON SCHEDULE EVERY 1 SECOND
 DO
     CALL speed_update;
